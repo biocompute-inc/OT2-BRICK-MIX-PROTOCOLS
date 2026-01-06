@@ -1,3 +1,12 @@
+"""
+The program is designed to convert input text or files into a binary representation, which is subsequently segmented into 36-bit blocks. 
+Each block is then encoded using the Brick Mix protocol. 
+Based on these encoded blocks, a self-assembly reaction is prepared and executed using a programmed thermocycler protocol.
+
+@author - Franci
+@Co-author - Naveen M
+For Biocompute
+"""
 import argparse
 from pathlib import Path
 
@@ -7,7 +16,8 @@ from pathlib import Path
 
 def file_to_bitstring(path: Path, ascii7: bool = False) -> str:
     """
-    Convert a file to one long bitstring.
+    This function converts a file to one long bitstring.
+    on default the ascii is state as false, to enable ascii you have to enter the command --ascii7 in the terminal
 
     If ascii7 is False (default):
         - Treat file as raw bytes (binary-safe, works for any file type)
@@ -31,8 +41,8 @@ def file_to_bitstring(path: Path, ascii7: bool = False) -> str:
 
 def word_to_bitstring(word: str, ascii7: bool = True) -> str:
     """
-    Convert a literal word/string to a bitstring.
-
+    This function converts a literal word/string to a bitstring.
+    For word/literal the ascii is set to be the default
     By default we use 7-bit ASCII for words (ascii7=True).
     If ascii7=False, we encode the word as UTF-8 bytes and use 8 bits per byte.
     """
@@ -424,7 +434,15 @@ def run(protocol: protocol_api.ProtocolContext) -> None:
 
 
 # ---------- CLI ----------
-
+"""
+The main() function help's to take the argument from Command line and parse them 
+--word tells program the input is literal/word
+--file tells program the input is file
+--output tells program the name of the output file the user needs
+--outdir tells program to create/make a new directory and stores output on that
+--transfer-vol tell program Transfer volume per brick in µL (default: 2.0).
+--brick-stock tells program Initial stock volume per brick well in µL. If omitted, defaults to transfer_vol * 15 + 5.
+"""
 
 def main():
     parser = argparse.ArgumentParser(
@@ -446,7 +464,13 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        help="Output .py protocol filename (default: BRICK_MIX_<WORD>.py or BRICK_MIX_<FILENAME>.py).",
+        help="Output protocol filename (default: BRICK_MIX_<WORD>.py or BRICK_MIX_<FILENAME>.py).",
+    )
+    parser.add_argument(
+        "--outdir",
+        type=str,
+        default="output",
+        help="Output directory for generated protocol files (default: ./output).",
     )
     parser.add_argument(
         "--transfer-vol",
@@ -534,8 +558,12 @@ def main():
         else:
             stem = source_label.replace(" ", "_")
         filename = f"BRICK_MIX_{stem}.py"
+    # if user didn't add .py and this line ensure .py extension
+    if not filename.lower().endswith(".py"):
+        filename += ".py"
 
-    output_dir = Path(r"D:\OT-2 output")
+    # output_dir = Path(r"")
+    output_dir = Path(args.outdir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     output_py = (output_dir / filename).resolve()
 
