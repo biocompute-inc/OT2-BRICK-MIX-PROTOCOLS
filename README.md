@@ -48,35 +48,46 @@ OT2-BRICK-MIX-PROTOCOLS/
 
 ```bash
 git clone https://github.com/biocompute-inc/OT2-BRICK-MIX-PROTOCOLS.git
-cd OT2-BRICK-MIX-PROTOCOLS
-
+# if you're windows user
+cd  OT2-BRICK-MIX-PROTOCOLS/scripts/winUser
+# if you're linux/WSL user
+cd OT2-BRICK-MIX-PROTOCOLS/scripts
 ```
 --- 
+## Note
 
+- if you're a windows user, brickMixAndSAOT2.py is the script you should run
+- if you're a linux/WSL user, BM_SA_builder.py is the script you should run
+- if you're using python3 command and your system throws an error maybe use python, but please to have a python on your pc don't expect it to run without python
+  
+---
 ## Usage
 
 ```bash
-   python3 <script you want to run >.py --word <Literal/word > --transfer-vol <ul> --brick-stock <ul> --temp-vol <ul>
+python3 <script you want to run >.py --word <Literal/word > --transfer-vol <ul> --brick-stock <ul> --temp-vol <ul>
 ```
-   ## Example
+## Example
 
-   ```bash
-      python3 brickMixAndSAOT2.py --word Epic --transfer-vol 2 --brick-stock 20 --temp-vol 10
-   ```
+```bash
+python3 brickMixAndSAOT2.py --word Epic --transfer-vol 2 --brick-stock 20 --temp-vol 10
+```
+```bash
+python3 BM_SA_builder.py --word Epic --transfer-vol 2 --brick-stock 20 --temp-vol 10
+```
 ## Output 
       ./output/BRICK_MIX_Epic.py
 
-   ## Custom output filename
-   ```bash
-      python3 brickMixAndSAOT2.py --word Epic --output demo  --transfer-vol 2 --brick-stock 20 --temp-vol 10
-   ```
+## Custom output filename  
+```bash
+python3 brickMixAndSAOT2.py --word Epic --output demo  --transfer-vol 2 --brick-stock 20 --temp-vol 10
+```
  ## Output
       ./output/demo.py
 
-   ## Custom output directory
-   ```bash
-      python3 brickMixAndSAOT2.py --word Epic --outdir results  --transfer-vol 2 --brick-stock 20 --temp-vol 10
-   ```
+## Custom output directory
+```bash
+python3 brickMixAndSAOT2.py --word Epic --outdir results  --transfer-vol 2 --brick-stock 20 --temp-vol 10
+```
 ## Output
       ./results/BRICK_MIX_Epic.py
 
