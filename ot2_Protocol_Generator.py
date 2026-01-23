@@ -14,9 +14,11 @@ import platform
 import shlex
 import subprocess
 import sys
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Set
+from typing import Set
 
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -91,6 +93,49 @@ def yes_no(prompt: str, default: bool = False) -> bool:
     if not raw:
         return default
     return raw in ("y", "yes", "true", "1")
+
+def get_supported_flags(script_path: str) -> Set[str]:
+    """Return set of '--flag' tokens present in `python script.py --help` output."""
+    cmd = [sys.executable, script_path, "--help"]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    help_text = (p.stdout or "") + "\n" + (p.stderr or "")
+    # flags = set()
+    # for token in help_text.replace(",", " ").split():
+    #     if token.startswith("--"):
+    #         # normalize tokens like "--output" and "--output=OUTPUT"
+    #         flags.add(token.split("=")[0])
+    return set(re.findall(r"--[A-Za-z0-9][A-Za-z0-9\-]*", help_text))
+
+def filter_args_by_supported_flags(all_args: List[str], supported: Set[str]) -> List[str]:
+    """
+    all_args is like ["--file","x","--outdir","output","--ascii7"]
+    Keep only pairs for supported flags; keep standalone flags too.
+    """
+    filtered: List[str] = []
+    i = 0
+    while i < len(all_args):
+        a = all_args[i]
+        if a.startswith("--"):
+            if a in supported:
+                filtered.append(a)
+                # check if next token is a value (and not another flag)
+                if i + 1 < len(all_args) and not all_args[i + 1].startswith("--"):
+                    filtered.append(all_args[i + 1])
+                    i += 2
+                else:
+                    i += 1
+            else:
+                # skip this flag and its value if it looks like it has one
+                if i + 1 < len(all_args) and not all_args[i + 1].startswith("--"):
+                    i += 2
+                else:
+                    i += 1
+        else:
+            # stray token; keep it
+            filtered.append(a)
+            i += 1
+    return filtered
+
 
 
 def discover_menu_items() -> List[MenuItem]:
@@ -244,6 +289,12 @@ def build_custom_args() -> List[str]:
         return []
     return shlex.split(raw)
 
+def run_selected(selected: MenuItem, args: List[str]) -> int:
+    supported = get_supported_flags(str(selected.script_path))
+    args = apply_outdir_fallback(args, supported)
+    args = filter_args_by_supported_flags(args, supported)
+    return run_script(selected.script_path, args)
+
 
 def run_script(script_path: Path, args: List[str]) -> int:
     cmd = [python_executable(), str(script_path)] + args
@@ -254,6 +305,53 @@ def run_script(script_path: Path, args: List[str]) -> int:
     except FileNotFoundError as e:
         print(f"Error: {e}")
         return 1
+
+def apply_outdir_fallback(args: List[str], supported: Set[str]) -> List[str]:
+    """
+    If script doesn't support --outdir but does support --output,
+    and user provided --outdir + --output, rewrite --output to include the folder.
+    """
+    if "--outdir" in supported:
+        return args
+
+    if "--output" not in supported:
+        return args
+
+    outdir = None
+    output = None
+
+    # find values
+    for i in range(len(args) - 1):
+        if args[i] == "--outdir":
+            outdir = args[i + 1]
+        if args[i] == "--output":
+            output = args[i + 1]
+
+    if outdir and output:
+        # remove --outdir pair
+        new_args = []
+        skip_next = False
+        for i, a in enumerate(args):
+            if skip_next:
+                skip_next = False
+                continue
+            if a == "--outdir":
+                skip_next = True
+                continue
+            new_args.append(a)
+
+        # rewrite output to include directory
+        new_output = str(Path(outdir) / output)
+
+        # replace --output value
+        for i in range(len(new_args) - 1):
+            if new_args[i] == "--output":
+                new_args[i + 1] = new_output
+                break
+
+        return new_args
+
+    return args
 
 
 def main() -> int:
@@ -311,7 +409,7 @@ def main() -> int:
     if yes_no("Add any extra args?", default=False):
         args += build_custom_args()
 
-    return run_script(selected.script_path, args)
+    return run_selected(selected, args)
 
 
 if __name__ == "__main__":
