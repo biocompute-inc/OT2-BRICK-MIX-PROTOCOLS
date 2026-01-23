@@ -99,7 +99,7 @@ def discover_menu_items() -> List[MenuItem]:
     If files move, you only need to update these paths.
     """
     items: List[MenuItem] = []
-
+    print("Welcome to the OT-2 Protocol Generator Menu!")
     # Windows-friendly brickmix+SA entrypoint (per repo README note)
     win_bm_sa = WINUSER_DIR / "brickMixAndSAOT2.py"
     if win_bm_sa.exists():
@@ -127,6 +127,7 @@ def discover_menu_items() -> List[MenuItem]:
         ("5", "ASYM_PCR.py", "Asymmetric PCR builder (ASYM_PCR.py)"),
         ("6", "build_brick_mix_py.py", "Legacy Brick Mix generator (build_brick_mix_py.py)"),
         ("7", "watchdog.py", "Utility / monitoring (watchdog.py)"),
+        ("8", "new_builder_07.py", "This is Brick Mix protocol")
     ]:
         p = SCRIPTS_DIR / rel
         if p.exists():
@@ -163,17 +164,28 @@ def build_common_args() -> List[str]:
     args: List[str] = []
 
     # Choose word OR file
-    word = safe_str("Enter literal word/string to encode (--word)", default=None)
-    file_path = None
-    if not word:
-        file_path = safe_path("Enter path to input file (--file)", must_exist=True)
+     # --- Explicit input mode selection ---
+    print("\nInput type:")
+    print("  [1] Text / literal (--word)")
+    print("  [2] File path (--file)")
+    mode = input("Choose 1 or 2 [1]: ").strip() or "1"
 
-    if word:
+    if mode == "1":
+        word = safe_str("Enter literal text to encode (--word)", default=None)
+        if not word:
+            print("  You must enter a non-empty --word.")
+            return []
         args += ["--word", word]
-    elif file_path:
+
+    elif mode == "2":
+        file_path = safe_path("Enter path to input file (--file)", must_exist=True)
+        if not file_path:
+            print("  You must provide a valid file path for --file.")
+            return []
         args += ["--file", str(file_path)]
+
     else:
-        print("  You must provide either --word or --file.")
+        print("  Invalid selection. Choose 1 or 2.")
         return []
 
     # Output controls
