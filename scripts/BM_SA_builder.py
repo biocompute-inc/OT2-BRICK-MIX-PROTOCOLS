@@ -503,6 +503,12 @@ def main():
         required=True,
         help="Template DNA volume per reaction in µL (1 µL BM + temp + buffer = 20 µL total).",
     )
+    parser.add_argument(
+        "--outdir",
+        type=str,
+        default=None,
+        help="Output directory for generated protocol files (overrides built-in default path).",
+    )
 
     args = parser.parse_args()
 
@@ -535,7 +541,10 @@ def main():
             stem = source_label.replace(" ", "_")
         filename = f"BRICK_MIX_{stem}.py"
 
-    output_dir = Path(r"/mnt/c/Users/franc/Desktop/OT-2_protocols/BRICK MIX PROTOCOLS")
+    if args.outdir:
+        output_dir = Path(args.outdir).resolve()
+    else:
+        output_dir = Path(r"/mnt/c/Users/franc/Desktop/OT-2_protocols/BRICK MIX PROTOCOLS")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_py = (output_dir / filename).resolve()
 
